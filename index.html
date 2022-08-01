@@ -1,0 +1,1346 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gridea</title>
+<link rel="shortcut icon" href="https://honlya.github.io/favicon.ico?v=1659319384223">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://honlya.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="Gridea - Atom Feed" href="https://honlya.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="温故而知新" />
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://honlya.github.io">
+  <img class="avatar" src="https://honlya.github.io/images/avatar.png?v=1659319384223" alt="">
+  </a>
+  <h1 class="site-title">
+    Gridea
+  </h1>
+  <p class="site-description">
+    温故而知新
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+      
+        <a href="https://getgridea.github.io/archives" class="menu">
+          统一门户日常问题
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+    
+        <div class="post-container">
+  
+    <article class="post">
+      <a href="https://honlya.github.io/post/wei-hu-xue-xi-nei-rong/">
+        <h2 class="post-title">维护学习内容</h2>
+      </a>
+      <div class="post-info">
+        <span>
+          2022-08-01
+        </span>
+        <span>
+          42 min read
+        </span>
+        
+      </div>
+      
+      <div class="post-abstract">
+        <h3 id="日常">日常</h3>
+<pre><code>--日常
+-- 查看存储是否都为END 挂了就重新跑 (除了正式库，jmkx也要看一下)
+select * from procctrl pl order by pl.laststarttime desc 
+select * from v$db_object_cache where locks &gt; 0 and pins &gt; 0 and type='PROCEDURE';--查询正在跑的存储
+select 'alter index '||index_name||' rebuild online;' from user_indexes where status='UNUSABLE';
+
+-- 期间是否正常
+select * from historyofsales hs where hs.POSTDATE&gt;=to_date('2021-02-01','yyyy-mm-dd')
+
+--检查重名
+select u.employeename from usr u where u.status = 41 group by u.employeename having count(1)&gt;1 
+
+---18服务器 c盘 jmkx查看error日志
+</code></pre>
+<h3 id="统一门户">统一门户</h3>
+<pre><code>--统一门户文件整体流程
+select * from joblocktemplate--配置的模板
+select * from ddidatafiledetail dd where dd.datatype = 'S' order by dd.createdate desc--DDI原始文件表头
+select * from ddioriginalsalesdata ds where ds.datafiledetailid = 119190832 --DDI原始文件明细
+--拆分后
+select *  from salesdatafile 
+select * from originalsalesdata os where os.salesdatafileid = 105227757
+
+--- 查询文件 例如 销售
+ select * from salesdatafile sa where sa.reffileid=115881514  --可根据filename查看
+  select * from datafileactionlog da where da.datafiledetailid=115881514 --文件状态 ：21失败  50卸载  10刚入
+  
+-- 不反写之前数据 状态10改为80
+--select * from orgcodecollate org where org.status=10 
+update orgcodecollate org set org.status=80 where org.status=10
+
+</code></pre>
+<p>​	进销存 ：</p>
+<p><strong>采购： purchase</strong></p>
+<p><strong>销售：sales</strong></p>
+<p><strong>库存：inventory</strong></p>
+<p>select * from ddidatafiledetail dd where dd.datatype = 'P' order by dd.createdate desc--DDI原始文件表头<br>
+select * from ddioriginalsalesdata ds where ds.datafiledetailid = 100219044 --DDI原始文件明细  销售<br>
+select * from ddioriginalinventorydata ds where ds.datafiledetailid = 100219042 --DDI原始文件明细  库存<br>
+select * from ddioriginalpurchasedata ds where ds.datafiledetailid = 100219044 --DDI原始文件明细   采购</p>
+<p>日志：</p>
+<pre><code> 
+  select * from ddidatafileactionlog  -- 查看原始文件 日志
+ 
+ select * from datafileactionlog da where da.datafiledetailid=115881514 --文件状态 ：21失败  50卸载  10刚入
+
+</code></pre>
+<p>其他 例如 18服务文件夹</p>
+<p>SalesDataBakup，手工上载后的文件</p>
+<p>DataFileListen  手工上载</p>
+<p>AllFactionyDDIListen：原始文件</p>
+<p>PRDDDIDateFileListen：拆分后文件，（注意是否卡文件） 拆分中的文件</p>
+<p>DDIlog：拆分后生成到目录文件</p>
+<p>门户页面：文件问题</p>
+<p>数据清洗------快速通道-----药厂文件展示（经销商代码，药厂，然后搜索）</p>
+<p>原始文件在ddiorg，，表中看，然后可以ddilog中error日志查看错误</p>
+<h3 id="1trtte当月销售天数和历史平均销售天数和数量维护-月底">1.TRTTE当月销售天数和历史平均销售天数和数量维护 (月底)</h3>
+<p>登录如下</p>
+<p>地址：57.227</p>
+<p>账号：dcchc</p>
+<p>密码：Chc2cd80</p>
+<p><strong>注意点：上月26日到本月25日为一月销量，具体看sql，时间修改</strong></p>
+<pre><code>--TRTTE当月销售天数和历史平均销售天数和数量
+ --修改对应日期  一般上个月26 号 到当月25 号  有两个特殊时间要注意
+
+with aa as(
+ select hs.sellercode,hs.sellername,count(1)/6 as 往前推6个月平均天数 from (select oz.orgcode as sellercode,oz.orgname as sellername,hs.salesdate from historyofdaysales hs,organization oz where hs.sellerid = oz.orgid and hs.salesdate &gt;= to_date('2020-05-26','yyyy-MM-dd') and hs.salesdate &lt;= to_date('2020-11-25','yyyy-MM-dd') and exists (select 1 from buproduct bp where bp.prodid = hs.prodid and bp.bucode = 'TRT Tech')  group by oz.orgcode,oz.orgname,hs.salesdate) hs group by hs.sellercode,hs.sellername
+)
+,bb as(
+ select oz.orgcode as sellercode,oz.orgname as sellername,sum(hs.originalqty)/6 as 往前推6个月平均销量 from  historyofdaysales hs,organization oz where hs.sellerid = oz.orgid and hs.salesdate &gt;= to_date('2020-05-26','yyyy-MM-dd') and hs.salesdate &lt;= to_date('2020-11-25','yyyy-MM-dd') and exists (select 1 from buproduct bp where bp.prodid = hs.prodid and bp.bucode = 'TRT Tech')  group by oz.orgcode,oz.orgname
+),cc as(
+ select hs.sellercode,hs.sellername,count(1) as 当月26号到月底销售天数 from (select oz.orgcode as sellercode,oz.orgname as sellername,hs.salesdate from historyofdaysales hs,organization oz where hs.sellerid = oz.orgid and  hs.salesdate &gt;= to_date('2020-11-26','yyyy-MM-dd') and hs.salesdate &lt;= to_date('2020-11-30','yyyy-MM-dd') and exists (select 1 from buproduct bp where bp.prodid = hs.prodid and bp.bucode = 'TRT Tech')  group by oz.orgcode,oz.orgname,hs.salesdate) hs group by hs.sellercode,hs.sellername
+),dd as(
+ select hs.sellercode,hs.sellername,count(1) as 当月1到25号销售天数 from (select oz.orgcode as sellercode,oz.orgname as sellername,hs.salesdate from historyofdaysales hs,organization oz where hs.sellerid = oz.orgid and  hs.salesdate &gt;= to_date('2020-12-01','yyyy-MM-dd') and hs.salesdate &lt;= to_date('2020-12-25','yyyy-MM-dd') and exists (select 1 from buproduct bp where bp.prodid = hs.prodid and bp.bucode = 'TRT Tech')  group by oz.orgcode,oz.orgname,hs.salesdate) hs group by hs.sellercode,hs.sellername
+),ee as(
+ select oz.orgcode as sellercode,oz.orgname as sellername,sum(hs.originalqty) as 当月销售数量 from  historyofdaysales hs,organization oz where hs.sellerid = oz.orgid and hs.salesdate &gt;= to_date('2020-11-26','yyyy-MM-dd') and hs.salesdate &lt;= to_date('2020-12-25','yyyy-MM-dd') and exists (select 1 from buproduct bp where bp.prodid = hs.prodid and bp.bucode = 'TRT Tech')  group by oz.orgcode,oz.orgname
+),ff as(
+ select hs.sellercode,hs.sellername,count(1) as 当月销售天数 from (select oz.orgcode as sellercode,oz.orgname as sellername,hs.salesdate from historyofdaysales hs,organization oz where hs.sellerid = oz.orgid and  hs.salesdate &gt;= to_date('2020-11-26','yyyy-MM-dd') and hs.salesdate &lt;= to_date('2020-12-25','yyyy-MM-dd') and exists (select 1 from buproduct bp where bp.prodid = hs.prodid and bp.bucode = 'TRT Tech')  group by oz.orgcode,oz.orgname,hs.salesdate) hs group by hs.sellercode,hs.sellername
+)
+
+select aa.sellercode as 经销商代码,aa.sellername as 经销商名称,ff.当月销售天数,aa.往前推6个月平均天数,
+--(aa.往前推6个月平均天数-cc.当月26号到月底销售天数-dd.当月1到25号销售天数)/(cc.当月26号到月底销售天数+dd.当月1到25号销售天数) as 销售天数差异占比1,
+case when  nvl(aa.往前推6个月平均天数,0)=0 or  nvl(ff.当月销售天数,0)=0 then null else
+to_char(round((aa.往前推6个月平均天数-ff.当月销售天数)/ff.当月销售天数*100,3),'990.999') || '%' end as 销售天数差异占比,
+cc.当月26号到月底销售天数,
+dd.当月1到25号销售天数,
+ee.当月销售数量,
+bb.往前推6个月平均销量,
+case when nvl(ee.当月销售数量,0)=0 or nvl(bb.往前推6个月平均销量,0)=0  then null else
+to_char(round((bb.往前推6个月平均销量-ee.当月销售数量)/ee.当月销售数量*100,3),'990.999') || '%' end as 销售数量差异占比
+
+from aa
+left join bb on aa.sellercode = bb.sellercode and aa.sellername = bb.sellername
+left join cc on aa.sellercode = cc.sellercode and aa.sellername = cc.sellername
+left join dd on aa.sellercode = dd.sellercode and aa.sellername = dd.sellername
+left join ee on aa.sellercode = ee.sellercode and aa.sellername = ee.sellername
+left join ff on aa.sellercode = ff.sellercode and aa.sellername = ff.sellername
+</code></pre>
+<h3 id="2issue和直连操作月底操作目前不用在手动发送">2.issue和直连操作（月底操作，目前不用在手动发送）</h3>
+<p>地址：23.3</p>
+<p>账号：bpotool</p>
+<p>密码：oval163</p>
+<p><strong>注意：最后语句 and 时间要做修改</strong></p>
+<p>and a.createdate&gt;=to_date('2020-12-01 00:00:00','yyyy-mm-dd HH24:mi:ss')  -- 大于当月12月的 即本月</p>
+<p>issue：</p>
+<pre><code>SELECT 
+ a.issuemanagetaskid as ID,
+ a.resname as 负责人,
+ p.projectcode as 项目代码,
+ p.projectname as 项目名称,
+ a.bucode as 药厂,
+ a.dtcode as 经销商代码,
+ a.dtname as 经销商名称,
+ a.createdate as 创建日期,
+ a.commbookingdate as 期望反馈日期,
+ m.valuename as CMI沟通状态,
+ d.valuename as 状态,
+ c.valuename as 问题分类,
+ --n.valuename as feedbackremark,
+ a.specialitem as 原因备注,
+ a.settledate as 预约跟进日期,
+ a.directsup as 新老客户端,
+ e.valuename as 紧急程度,
+ a.problemdesc as 问题描述,
+ a.dtresname as 经销商负责人,
+ a.resphone as 联系电话,
+ u.username as 上载人,
+ a.executers as 完成人,
+ a.stagestate as 分类状态,
+ a.regionname as 省份,
+ a.cmiresname as cmi负责人,
+ a.datelastupdated as 完成时间
+FROM issuemanagetask a ,projecttask p,dictionary d,dictionary c,dictionary e,dictionary m,dictionary n,usr u
+WHERE 1=1 
+  and d.type(+)='StatusIssue'
+  and d.languagecode(+)='cn'
+  and a.status=d.value(+)  
+  and c.type(+)='QuestionClass'
+  and c.languagecode(+)='cn'
+  and a.questionclass=c.value(+)
+  and e.type(+)='InterestDegree'
+  and e.languagecode(+)='cn'
+  and a.urgencylevel=e.value(+)
+  and m.type(+)='StatusLinkup'
+  and m.languagecode(+)='cn'
+  and a.commstatus=m.value(+)
+  and n.type(+)='FeedbackRemark'
+  and n.languagecode(+)='cn'
+  and a.feedbackremark=n.value(+) 
+  and a.projecttaskid=p.projecttaskid  
+  and a.maker=u.userid(+)
+  and a.createdate&gt;=to_date('2020-12-01 00:00:00','yyyy-mm-dd HH24:mi:ss')
+</code></pre>
+<p>直连：</p>
+<pre><code>SELECT 
+  a.directtaskid as ID,
+  a.resname as 负责人,
+  c.projectcode as 项目代码,
+  c.projectname as 项目名称,
+  a.bucode as 药厂,
+  b.regionname as 省份,
+  b.cityname as 城市,
+  a.dtcode as 经销商代码,
+  a.dtname as 经销商名称,
+  a.arrangedate as 安排日期,
+  d.valuename as 状态,
+  a.directdate as 预约安装日期,
+  a.specialitem as 原因备注,
+  e.valuename as 是否签署直连协议,
+  b.ddidatapath as DDI直连数据查询路径,
+  f.valuename as 直连方式,
+  i.valuename as DDI直连方式,
+  g.valuename as 直连方式明细,
+  h.valuename as 总部直连,
+  b.outbounddate as 出库日期开票日期,
+  b.salesdate as DDI销售抓取时间点,
+  b.purdate as DDI采购抓取时间点,
+  b.invdate as DDI库存抓取时间点,
+  b.businessres as 商务代表,
+  b.businessphone as 商务电话,
+  b.businessemail as 商务邮箱,
+  l.valuename as 经销商级别,
+  b.directres as 直连负责代表,
+  b.hiscomparisonmon as 历史比对月数,
+  a.dtresname as 联系人,
+  a.resphone as 联系电话,
+  a.executers as 完成人,
+  a.datelastupdated  as 完成时间
+FROM directtask a,ddirepositorydetail b,projecttask c,dictionary d,dictionary e,dictionary f,dictionary i,dictionary g,dictionary h,dictionary l
+WHERE 1=1 
+  and d.type(+)='StatusDirect'
+  and d.languagecode(+)='cn'
+  and a.status=d.value(+)
+  and e.type(+)='YesOrNo'
+  and e.languagecode(+)='cn'
+  and b.isddiagreement=e.value(+)
+  and f.type(+)='DirectLink'
+  and f.languagecode(+)='cn'
+  and b.directlink=f.value(+)
+  and i.type(+)='DDIdirectLink'
+  and i.languagecode(+)='cn'
+  and b.ddidirectlink=i.value(+)
+  and g.type(+)='DirectLinkDetail'
+  and g.languagecode(+)='cn'
+  and b.directlinkdetail=g.value(+)
+  and h.type(+)='hqdirect'
+  and h.languagecode(+)='cn'
+  and b.hqdirect=h.value(+)
+  and l.type(+)='DLMethod'
+  and l.languagecode(+)='cn'
+  and b.dealerlevel=l.value(+)
+  AND a.directtaskid=b.directtaskid(+)  
+  AND a.projecttaskid=c.projecttaskid    
+  and c.status=41
+  and a.createdate&gt;=to_date('2020-12-01 00:00:00','yyyy-mm-dd HH24:mi:ss')
+  
+</code></pre>
+<h3 id="3系数维护数据添加">3.系数维护，数据添加</h3>
+<p>地址：57.232</p>
+<p>账户：dcph</p>
+<p>密码：Hp678cd</p>
+<p><strong>注意：发来的数据，要跟数据库中字段对应，依次执行插入确认</strong></p>
+<p>（表格中数据第一列，插入一行，后边字段对照表中格式是否对应，sql中临时表插入第二步即可）</p>
+<p><strong>注意提交事务。</strong></p>
+<p><strong>注意:关注四个字段即可，经销商代码-产品代码-原始规格-原始单位</strong></p>
+<pre><code>--先在第一列插入空白列 然后在价格原始规格中间插入空白列 剪切原始单位进去
+delete from umtransform01    --第一步删除临时表数据
+select * from umtransform01 for update --第二部将处理好的数据插入临时表
+select * from umtransform u where exists (select 1 from umtransform01 u1 where u1.orgcode = u.orgcode --第三步查重
+                 and u1.prodcode = u.prodcode
+                 and u1.originalspec = u.originalspec
+                 and u1.originalumname = u.originalumname)
+                 
+                 
+update umtransform01 u01 set u01.prodid = (select p.prodid from product p where p.prodcode = u01.prodcode)  -- 第四步更新到两个正式表
+update umtransform01 u01 set u01.orgid = (select oz.orgid from organization oz where oz.orgcode = u01.orgcode)
+insert into umtransform select * from umtransform01  --最后执行插入
+</code></pre>
+<p><strong>问题反馈：</strong></p>
+<p><strong>问题1</strong>：对方说明没有导出成功数据，根据数据查看数据库中是否有数据，有则已导入。（这次遇到的是对面没有给<strong>最小单位</strong>，对方导出不对，相应有的数据都要有除了品种可省略）</p>
+<p>此步骤也可做为验证，临时表数据是否插入到正式表中。</p>
+<pre><code>select * from umtransform u where u.orgcode = 'H871MH'   and u.prodcode = '228405' and u.originalspec = '50ml/瓶' and  u.originalumname = '盒'
+
+</code></pre>
+<p><strong>问题2</strong>: 接着上方问题继续，正式表中已经存在数据了，有列数据没有，对方重发数据，这边要重新添加操作，要先把正式表中刚才已添的数据删掉，再重新执行导入。</p>
+<pre><code>delete from umtransform u where exists(select 1 from umtransform01 u1 where u1.orgcode = u.orgcode --
+                 and u1.prodcode = u.prodcode
+                 and u1.originalspec = u.originalspec
+                 and u1.originalumname = u.originalumname)
+</code></pre>
+<h3 id="附加修改操作">附加：修改操作</h3>
+<pre><code>/* 根据其orgcode 经销商代码，procode 产品代码，originalspec 原始规格，originalumname 原始单位
+   去查找，然后根据提供的数据去对照修改一致即可，一般为修改价格 单位，但产品规格 转换系数等也要注意，最好依次对照保持正确性
+*/
+select * from umtransform u where u.orgcode ='H66151'   
+and u.prodcode = '228237' and u.originalspec = '120丸*12瓶（大盒）' and  u.originalumname = '件'
+for update
+</code></pre>
+<h3 id="4双引号对照处理-名称对照">4.双引号对照处理-名称对照</h3>
+<p>数据库：172.20.57.227</p>
+<p>账号：unportal</p>
+<p>密码: La1tropnu</p>
+<p><strong>注意（两个字段的更改）：orgid是11，这时应该是替换掉11才对，for update更改其name，删除原始11的记录，并将更改后的记录status原来 80为198</strong></p>
+<p>一步一步执行，避免后续出现问题。</p>
+<p><strong>经销商代码</strong></p>
+<pre><code>--对照双引号修改
+// 通过查找经销商代码，获取到dtid
+select * from organization o where o.orgcode = 'H633TY'--101182243
+// 通过模糊查询客户名称和dtid，精确找到该经销商
+// orgid大于100或者通过查找客户代码得到orgid，for update后直接锁当前数据，编辑即可（更改其name，并更改status为198）
+select * from orgnamecollate om where om.orgname like '%莒南县人民医院%莒南县城天桥路156%' and om.dtid = 101182243
+for update
+</code></pre>
+<h3 id="5每日必备每天巡检">5.每日必备（每天巡检）</h3>
+<h4 id="1在18服务巡查4个文件夹">(1)在18服务巡查4个文件夹</h4>
+<ol>
+<li>
+<p>先 连接到172.20.56.196</p>
+</li>
+<li>
+<p>再连接172.21.0.18</p>
+</li>
+<li>
+<p>巡查以下4个文件夹</p>
+<p><strong>ALLFactoryDDIListen</strong>   检查该文件夹中文件是否正常  几十几百</p>
+<p><strong>BusyPRDDDIDataFileListen</strong>  一般该文件夹为空</p>
+<p><strong>PRDDDIDataFileListen</strong>  该文件夹中文件 主目录，文件数量</p>
+<p><strong>PRDMSDDDIDataFileListen</strong>  文件是否正常被读取掉</p>
+</li>
+</ol>
+<h4 id="2sql查看存储过程执行">(2)sql查看存储过程执行</h4>
+<p>数据库：172.20.57.227</p>
+<p>账号：unportal</p>
+<p>密码: La1tropnu</p>
+<pre><code>// 查看存储过程执行开始结束时间，以及STATUS为END，如果在run需要注意
+select * from procctrl pl order by pl.laststarttime desc
+
+// 正在执行的存储过程，即正执行的功能
+select * from v$db_object_cache where locks &gt; 0 and pins &gt; 0 and type='PROCEDURE';
+</code></pre>
+<h4 id="3索引检查">(3)索引检查</h4>
+<p>数据库：172.20.57.227</p>
+<p>账号：unportal</p>
+<p>密码: La1tropnu</p>
+<pre><code>// 结果为空，如果有出来sql，再把下方sql执行
+select 'alter index '||index_name||' rebuild online;' from user_indexes where status='UNUSABLE';
+</code></pre>
+<h4 id="4检查重名">(4)检查重名</h4>
+<p>结果三个name，状态41 有效，28无效</p>
+<pre><code>select u.employeename from usr u where u.status = 41 group by u.employeename having count(1)&gt;1 --检查重名
+</code></pre>
+<h4 id="518服务jmkx文件查看">(5)18服务jmkx文件查看</h4>
+<p>查看log日志，error.log文件</p>
+<h3 id="6日志内容学习">6.日志内容学习</h3>
+<p>18服务，226都可</p>
+<h4 id="1查看日志工具使用">(1)查看日志工具使用</h4>
+<pre><code>// 测试数据库 log 举例，工具中file打开该文件连接后获取日志信息
+D:\jboss-4.0.5.GA\server\stgportal\log 中的 dcms_workflow文件
+</code></pre>
+<h4 id="2logger工具结构sql查看">(2)logger工具，结构sql查看</h4>
+<pre><code>// 先open object 打开config文件
+D:\jboss-4.0.5.GA\server\stgportal\deploy\oval.war\WEB-INF 下的 config文件
+
+// 然后通过seach 查询
+// 一般常用 job，table，page
+</code></pre>
+<h3 id="7logger日志抓取sql">7.logger日志抓取sql</h3>
+<p>连接59.196后再连接</p>
+<p>地址：172.20.57.226</p>
+<p>The  Whole SQL String=      -- 抓取其中sql到数据库中执行显示其数据是否有问题</p>
+<h3 id="8进销存不平衡报告sql月初报告邮箱发送">8.进销存不平衡报告sql（月初报告，邮箱发送）</h3>
+<p>数据库：57.227</p>
+<p>账户：dcned</p>
+<p>密码：Den6ydc5</p>
+<p><strong>根据需求，选中导出为excel普通类型即可，导出为csv格式时产品代码前边0会省略。</strong></p>
+<p>注意：to_date()时间要改变  to_date('2021-01-01','yyyy-mm-dd')</p>
+<p>日期导出为上个月，例如2021-01-01，导出的为2020 12月的报告</p>
+<pre><code>--进销存不平衡报告
+  SELECT
+a.inventoryimbalancedataid,a.userid,
+ b.prodcode AS 产品代码,
+  c.prdn AS 产品代码,
+  a.province AS 省份,
+  a.orgcode AS 经销商代码,
+  a.orgname AS 经销商名称,
+  a.salesman AS 代表名称,
+   a.beginrealstock AS 期初库存,
+   a.salesaqty AS SalesA,
+    a.callinqty AS 调入,
+  a.salesofmonthdata AS 销售,
+  a.logicalstock AS 期末理论库存,
+  a.realstock AS 期末实际库存,
+  a.difference AS 差异,
+  a.diffproportion AS 差异比例,
+  a.lastluqtysum as 每月最后六天采购数据
+ -- a.createdate
+
+FROM inventoryimbalancedata a,
+   product b,
+   productlang c
+
+WHERE 1=1
+  and a.prodid= b.prodid
+  and a.prodid=c.prodid
+  --and a.year='2020'
+  --and a.month='5'
+  /*and a.year||lpad(a.month,2,0) &gt;=2014||lpad(7,2,0)
+  and a.year||lpad(a.month, 2,0)&lt;=2014||lpad(7,2,0)  */
+  and c.languagecode= 'cn'
+  --order by a.createdate desc
+/* and exists(select 1 from (select prodid from bumasterdetail bu,product p where bu.bumasterid = 100002280
+       and bu.phamfactgorycode = p.phamfactgorycode and (bu.prodcode = p.prodcode or bu.prodcode is null)) prod
+       where a.prodid=prod.prodid) */
+and userid=100008067
+and a.createdate&gt;=to_date('2021-01-01','yyyy-mm-dd')--本月存的是上月数据
+
+
+-- 以下两步操作用于核查
+
+-- 检查该用户id，根据相对应用户获取id
+--select * from usr u where u.username = 'xuepengfei'--100008067
+
+-- 根据id，获取数据信息，查看是否有数据
+--select * from inventoryimbalancedata iv where iv.userid = 100008067 order by iv.createdate desc
+</code></pre>
+<h3 id="9黑名单维护月初邮箱回复">9.黑名单维护（月初，邮箱回复）</h3>
+<p>数据库：172.20.57.227</p>
+<p>账号：unportal</p>
+<p>密码: La1tropnu</p>
+<p><strong>注意：日期字段</strong></p>
+<pre><code>--黑名单维护
+--select * from blacklist bl order by bl.createdate desc  --自检
+ insert into blacklist (blacklistid ,bucode ,dtcode,dtname ,attr1 ) 
+   select blacklistseq.nextval,bucode ,dtcode,dtname,'202101' from blacklist where attr1='202012' 
+   -- 如上12月黑名单
+</code></pre>
+<h3 id="10跨省检查结果邮箱发送">10.跨省检查（结果邮箱发送）</h3>
+<p>数据库：172.20.57.227</p>
+<p>账号：unportal</p>
+<p>密码: La1tropnu</p>
+<pre><code>--跨省检查
+-- dtcode,stdcode,custname三个字段，依次插入
+select dtcode,buyercode,a.oricustomername from skipregion_enable a where 1=2 for update;
+
+--查询表核实
+select * from skipregion_enable s where s.dtcode='H669JN' and s.buyercode='H55114' 
+
+</code></pre>
+<h3 id="11删除产品对照id常用">11.删除产品对照id(常用)</h3>
+<p>up 227正式</p>
+<p>可做个动态sql</p>
+<pre><code>--删除产品对照
+delete from prodcollate p where p.prodcollateid in (100239259,
+100283274,
+100766600,
+100800708,
+101109977,
+101453479
+)
+</code></pre>
+<h3 id="12产品规格添加">12.产品规格添加</h3>
+<p>dcph 232</p>
+<p>--</p>
+<p>172.21.0.19<br>
+administrator<br>
+[ddX@9X7</p>
+<p>D盘 CAH-cfg-config-salesout-treechdaysale表中查出来着哪个表</p>
+<p>销售类型，例如</p>
+<p>treech，，从药厂门户定制报告-BJTRT Tech日报表查看处理报表为哪个 相对应</p>
+<hr>
+<pre><code>-- for update添加上产品记录即可
+select * from producttrt
+</code></pre>
+<h3 id="13同仁堂商业级别维护-等级维护">13.同仁堂商业级别维护--等级维护+</h3>
+<p>dcph</p>
+<p>添加产品代码-名称-级别 即可</p>
+<pre><code> insert into trtstorglevel values 
+ (trtstorglevelseq.nextval,'H489KT','山西乐群医药有限公司','二级商')
+</code></pre>
+<pre><code>DCPH230 同仁堂一期等级维护添加sql
+    添加客户代码 客户名字 创建时间
+   insert into bjtrtsellerlist (ORGCODE, ORGNAME, CREATEDATE) values ('H258BQ ', '江西弘仁医药有限公司', to_date('22-07-2020', 'dd-mm-yyyy'))
+</code></pre>
+<h3 id="14当前月前5工作日进入系统文件动态sql">14.当前月前5工作日进入系统文件动态sql</h3>
+<pre><code>--当前月前五工作日进入系统的文件查询
+--文件类型 例:(SM,PM,SD,PD,ID)
+--数据来源 例:(WEB,DD)
+--药厂 例:(SPAS,CAH)
+select sf.filename as 文件名,sf.createdate as 创建日期 from salesdatafile sf where sf.filename like 'SM%'||to_char(sysdate,'yyyyMM')||'%WEB%SPAS%' 
+and trunc(sf.createdate)&lt;=  (select trunc(max(calendardate))  from (select * from bipmbusinesscalendar br where br.year = to_char(sysdate,'yyyy') and br.month = to_char(sysdate,'MM') and nvl(br.salesactivity,'Y') &lt;&gt; 'N' order by br.calendardate) where rownum &lt; 6)
+and sf.filestatus not in (21,50)
+
+-- 后边不要加order by
+</code></pre>
+<h3 id="15删除打单操作常用动态sql页面已添加">15.删除打单操作（常用，动态sql页面已添加）</h3>
+<p>up 227</p>
+<p><strong>gatherplandetail 打单表</strong></p>
+<pre><code>--打单id查看是存在打单信息
+--select * from gatherplandetail gp where gp.gatherplandetailid=100723369 
+--删除打单
+delete from gatherplandetail g where g.gatherplandetailid in(100723373,
+100723369,
+100723370,
+100723371,
+100723372,
+100723374)
+</code></pre>
+<h3 id="16产品新增查看是否重复问题">16.产品新增查看是否重复问题</h3>
+<p>up 227</p>
+<p><strong>product 产品表</strong></p>
+<pre><code>--查询产品是否存在 重复
+select * from product pr where pr.prodcode in('224053',
+'224054',
+'224055'
+)
+</code></pre>
+<h3 id="17新建药厂bu">17.新建药厂BU</h3>
+<pre><code>--新建药厂步骤
+-- 1
+select * from joblocktemplate for update
+select joblocktemplateseq.nextval from dual -- 100000320
+-- 2
+select joblockseq.nextval from dual --100000640
+select * from joblock for update
+-- 3 
+select * from accesslist;
+insert into accesslist (ACCESSLISTID, ACCESSTYPE, CREATEDATE, DATELASTUPDATED, USERID, ACCESSLISTCODE, ACCESSLISTNAME, WORKDAYLIMIT)
+values (accesslistseq.nextval, 10, sysdate, sysdate, 1, 'TEVA', 'TEVA', 1);
+-- 4
+select * from bumaster bu order by bu.createdate desc
+
+此处在统一门户中配置--基础数据---业务伙伴---DDI打单目录：
+经销商目录配置：经销商代码 经销商名称
+BU药厂配置：选择相应BU
+
+最终数据清洗，原始文件处理后拆分，在统一门户--数据清洗----快速通道--药厂文件展示 产看日志以及是否拆分成功。也可从数据库中直接查看，sql参考 “统一门户”标签下sql查看。
+即原始数据到拆分的过程处理
+
+-- 5 时间窗口配置  calendar_teva_month  calendar_teva_day
+（参考下方DDI时间窗口配置value）
+门户页面--系统--期间管理--DDI时间窗口配置验证是否配置成功
+
+-- 6 
+SELECT *
+FROM dictionary a  
+
+WHERE 1=1    
+	and a.languagecode='cn'   
+	and a.type = 'PharmacyFactory'        
+  for update
+    
+  select dictionaryseq.nextval from dual;--130016248
+  
+  -- 7
+  --filename_pad_ddi 里防止重复的地方添加该药厂
+  --即存储过程查看添加药厂
+</code></pre>
+<h6 id="ddi时间窗口">DDI时间窗口</h6>
+<pre><code>表:calendarconfig
+
+&lt;OPTION value=10&gt;月流向&lt;/OPTION&gt;
+&lt;OPTION value=20&gt;月库存&lt;/OPTION&gt;
+&lt;OPTION value=30&gt;月购进&lt;/OPTION&gt;
+&lt;OPTION value=40&gt;周流向&lt;/OPTION&gt;
+&lt;OPTION value=50&gt;周库存&lt;/OPTION&gt;
+&lt;OPTION value=60&gt;周购进&lt;/OPTION&gt;
+&lt;OPTION value=70&gt;日流向&lt;/OPTION&gt;
+&lt;OPTION value=80&gt;日库存&lt;/OPTION&gt;
+&lt;OPTION value=90&gt;日购进&lt;/OPTION&gt;
+&lt;OPTION value=100&gt;半月流向&lt;/OPTION&gt;
+&lt;OPTION value=110&gt;半月库存&lt;/OPTION&gt;
+&lt;OPTION value=120&gt;半月购进&lt;/OPTION&gt;
+</code></pre>
+<h3 id="18期间主数据-日期-启用-关闭-未用-状态已添到22年暂时用不到">18.期间主数据--日期 启用-关闭-未用 状态(已添到22年，暂时用不到)</h3>
+<p>处理中心 下的      基础数据--期间管理---期间主数据 目录，系统标准期间 查看</p>
+<p>sql 如下：</p>
+<pre><code> -- 查看该表，状态43 为启用
+ select * from dcperioddetail WHERE 1=1  and status = 43
+ -- 表中id 获取到后，查看此id为条件下的数据S
+ select * from dcperioddetail dc where dc.datacleanperiodid = 1000 for update
+</code></pre>
+<h3 id="19流向归档问题-">19.流向归档问题  ---</h3>
+<p>统一门户---数据采集--流向文档下载 查看</p>
+<pre><code>主表:ORIGINALFLOWFILELIST
+
+-- select * from orgdistributor o where o.orgcode ='HJ4694' --最好先核查 是否存在，然后再执行插入
+
+-- 根据orgcode 找到其 orgid orgname regioncode 三个字段，根据这三个字段插入下方即可，其他不需要更改
+
+select * from organization oz where oz.orgcode = 'HJ4694' --需要插入打单目录的数据从机构表里取
+
+
+insert into orgdistributor (ORGDISTRIBUTORID, ORGID, ORGCODE, ORGNAME, REGIONCODE, PHONENUMBER, ELECTORNICUPLOAD, STATUS, COLLECTFRECUENCY, COLLECTDAYS, COLLECTTYPE, ADDDATE, PAUSEDATE, PAUSEREASON, CUSTOMERCODE, FEEDBACK, COMMENTS, CUSTOMERNAME, EMPLOYEENAME, CREATEDATE, DATELASTUPDATED, LASTMAKERUSERID, ORGCONTACT, ORGCONTACTPHONE, COLLECTDAYS2, INVENTORYUPLOAD, ORGRESPERSON, CMIRESPERSON, ORGADRESS, USERID, PHARMACEUTICAL, AREANAMEADD, AREAMANAGERADD)
+values (orgdistributorseq.nextval, 106372779, 'HJ4694', '南京筑康医药有限公司', '320000', '1', 0, 1, 1, 1.00000, 1, null, null, null, null, null, null, null, '1', sysdate, sysdate, 1, null, null, 4.00000, 0, null, null, null, null, null, null, null);
+</code></pre>
+<h3 id="20打单目录变更-操作">20.打单目录变更 操作</h3>
+<pre><code>-- 查询出负责人对应code
+--select * from usr u where u.employeename = '王雅静'--449
+
+-- gatherplandetail打单表
+--select * from gatherplandetail gp where gp.gatherplandetailid = 100719809
+
+   gatherpersion		上载人
+   gatherpersioncode	上载人代码
+   ovalemployeename		收集人
+   employeecode			收集人代码
+   dataperson			数据负责人
+   datapersoncode		数据负责人代码
+   
+-- 具体更改根据提供 情况进行sql处理
+--更改 上载人为 xxx，上载人代码为xxx，条件为 提供的表格中gatherplandetailid 即id
+update gatherplandetail gp set gp.gatherpersion = '王雅静',gp.gatherpersioncode = '449' 
+where gp.gatherplandetailid in (100719809,100717594,100717595)
+-- 更改 收集人
+update gatherplandetail gp set gp.ovalemployeename = '王雅静',gp.employeecode = '449' 
+where gp.gatherplandetailid in (100719809,100717594,100717595)
+--更改 数据负责人
+update gatherplandetail gp set gp.dataperson = '王雅静',gp.datapersoncode = '449' 
+where gp.gatherplandetailid in (100719809,100717594,100717595)
+
+下方为查询确认 避免漏掉数据 select …… from table where …… in()  格式
+--select  gp.ovalemployeename,gp.employeecode from gatherplandetail  gp
+--select  gp.gatherpersion from gatherplandetail gp 
+--select  gp.dataperson from gatherplandetail gp 
+--where gp.gatherplandetailid in (100719809)
+</code></pre>
+<h3 id="21trt省市修改">21.trt省市修改</h3>
+<p>处理中心  dcchc 57.227</p>
+<pre><code>--trt省市修改
+
+-- 通过条件 省 名称查询得到 code
+select * from region r where r.regionname = '天津市'--120000
+-- 通过条件 市 获取到 市 code    市县区 都在city表
+select * from city c where c.cityname = '天津市'--440100 120100
+-- 更改其客户省份 城市
+select * from historyofdaysales hd where hd.historyofdaysalesid in (432637634)for update
+</code></pre>
+<p>然后到药厂门户查看是否正确 dcph</p>
+<pre><code>select * from historyofsales_day hd where hd.historyofsalesid in (432642763)
+</code></pre>
+<h3 id="22adj报告每月第6工作日">22.ADJ报告(每月第6工作日)</h3>
+<p>ADJ修改日期  <strong>每个月开始的第六个工作日</strong>发给Sang, Yu Ting<a href="mailto:yuting.sang@oval-tech.com">yuting.sang@oval-tech.com</a> （包含第六个工作日）</p>
+<p><strong>注意：日期 期间</strong></p>
+<pre><code>
+   select a.SELLERPROVINCENAME as SELLERPROVINCENAME,
+          a.SELLERCITYNAME as SELLERCITYNAME,
+          a.sellercode,
+          a.sellername,
+          a.sellerrepname,
+          buyercode,
+          buyername,
+          a.MAKER,
+          a.prodcode,
+          a.prodname,
+          dcname,
+          a.qty,
+          --count(1) as aa,
+          extract(year from SALESDATE) || '0' || extract(month from SALESDATE) as salesdate,
+          a.sdtype,
+          case
+            when a.adjsign = 'n' then
+             'Normal'
+            else
+             'ADJ'
+          end as adj,
+          case when a.recordtype='HIS' then 'T'
+            when a.recordtype='DDI' then 'D'
+              when a.recordtype='WEB' then 'W'
+                when a.recordtype='MN' then 'U'
+                  when a.recordtype='MOD' then 'M'
+                    when a.recordtype='VIR' then 'V'
+                      end as recordtype
+     from Historyofsales_new@Dcph232 a
+    where 1 = 1
+      and a.adjsign &lt;&gt; 'n'
+      and salesdate &gt;= to_date('2020-07-01', 'yyyy-MM-dd')
+      and salesdate &lt; to_date('2020-08-01', 'yyyy-MM-dd')
+      and a.dcname &lt;&gt; 'OTH'
+      and a.dcname&lt;&gt;'BSL'
+      and a.dcname&lt;&gt;'MSD'
+      and a.dcname&lt;&gt;'BLG'
+      --and a.VERSION &lt;&gt; '201301-20130217-170413MSD'
+      and a.recordtype &lt;&gt; 'VIR'
+
+   union all
+   select a.SELLERPROVINCENAME as SELLERPROVINCENAME,
+          a.SELLERCITYNAME as SELLERCITYNAME,
+          a.sellercode,
+          a.sellername,
+          a.sellerrepname,
+          buyercode,
+          buyername,
+          a.MAKER,
+          a.prodcode,
+          a.prodname,
+          dcname,
+          a.qty,
+          --count(1) as aa,
+          extract(year from SALESDATE) || '0' || extract(month from SALESDATE) as salesdate,
+          a.sdtype,
+          case
+            when a.adjsign = 'n' then
+             'Normal'
+            else
+             'ADJ'
+          end as adj,
+        --  '' as  'Normal',
+          case when a.recordtype='HIS' then 'T'
+            when a.recordtype='DDI' then 'D'
+              when a.recordtype='WEB' then 'W'
+                when a.recordtype='MN' then 'U'
+                  when a.recordtype='MOD' then 'M'
+                    when a.recordtype='VIR' then 'V'
+                      end as recordtype/*count(1)*/
+     from Historyofsales_new@Dcphmsd232 a
+    where 1 = 1
+      and a.adjsign &lt;&gt; 'n'
+
+      and salesdate &gt;= to_date('2020-07-01', 'yyyy-MM-dd')
+      and salesdate &lt; to_date('2020-08-01', 'yyyy-MM-dd')
+      and a.dcname='MSD'
+      and a.recordtype &lt;&gt; 'VIR'
+
+   union all
+   select a.SELLERPROVINCENAME as SELLERPROVINCENAME,
+          a.SELLERCITYNAME as SELLERCITYNAME,
+          a.sellercode,
+          a.sellername,
+          a.sellerrepname,
+          buyercode,
+          buyername,
+          a.MAKER,
+          a.prodcode,
+          a.prodname,
+          dcname,
+          a.qty,
+          --count(1) as aa,
+          extract(year from SALESDATE) || '0' || extract(month from SALESDATE) as salesdate,
+          a.sdtype,
+          case
+            when a.adjsign = 'n' then
+             'Normal'
+            else
+             'ADJ'
+          end as adj,
+          case when a.recordtype='HIS' then 'T'
+            when a.recordtype='DDI' then 'D'
+              when a.recordtype='WEB' then 'W'
+                when a.recordtype='MN' then 'U'
+                  when a.recordtype='MOD' then 'M'
+                    when a.recordtype='VIR' then 'V'
+                      end as recordtype
+     from Historyofsales_new@Dcphblg232 a
+    where 1 = 1
+      and a.adjsign &lt;&gt; 'n'
+      and salesdate &gt;= to_date('2020-07-01', 'yyyy-MM-dd')
+      and salesdate &lt; to_date('2020-08-01', 'yyyy-MM-dd')
+      and a.dcname='BLG'
+      and a.recordtype &lt;&gt; 'VIR'
+
+
+   union all
+   select a.SELLERPROVINCENAME as SELLERPROVINCENAME,
+          a.SELLERCITYNAME as SELLERCITYNAME,
+          a.sellercode,
+          a.sellername,
+          a.sellerrepname,
+          buyercode,
+          buyername,
+          a.MAKER,
+          a.prodcode,
+          a.prodname,
+          dcname,
+          a.qty,
+          --count(1) as aa,
+          extract(year from SALESDATE) || '0' || extract(month from SALESDATE) as salesdate,
+          a.sdtype,
+          case
+            when a.adjsign = 'n' then
+             'Normal'
+            else
+             'ADJ'
+          end as adj,
+          case when a.recordtype='HIS' then 'T'
+            when a.recordtype='DDI' then 'D'
+              when a.recordtype='WEB' then 'W'
+                when a.recordtype='MN' then 'U'
+                  when a.recordtype='MOD' then 'M'
+                    when a.recordtype='VIR' then 'V'
+                      end as recordtype
+     from Historyofsales_new@Dcphhsr232 a
+    where 1 = 1
+      and a.adjsign &lt;&gt; 'n'
+      and salesdate &gt;= to_date('2020-07-01', 'yyyy-MM-dd')
+      and salesdate &lt; to_date('2020-08-01', 'yyyy-MM-dd')
+      and a.recordtype &lt;&gt; 'VIR'
+</code></pre>
+<h3 id="23对照删除">23.对照删除</h3>
+<pre><code>--对照删除
+
+-- 临时表
+delete from org_temp	
+--插入商业代码 orgcode
+select * from org_temp for update 
+--查找临时表中数据数量是否与excel中一致
+select count(1) from org_temp 
+--查找organization表，当临时表中code与之相同的 倒序查出
+select o.orgid,o.orgcode from organization o,org_temp ot where o.orgcode = ot.orgcode order by o.orgcode desc 
+-- 查出orgid，通过客户代码查出dtid 同样方式
+
+delete from orgnamecollatetemp --临时表
+--依次插入
+select om.dtid,om.orgname,om.orgid from orgnamecollatetemp om for update
+-- 查找确认
+select count(1) from orgnamecollate om where exists(select 1 from orgnamecollatetemp ot where ot.dtid = om.dtid and ot.orgname = om.orgname and ot.orgid = om.orgid)--3857
+
+create table orgnamecollate0222del as select * from orgnamecollate om where exists(select 1 from orgnamecollatetemp ot where ot.dtid = om.dtid and ot.orgname = om.orgname and ot.orgid = om.orgid)
+
+select count(1) from orgnamecollate0222del--3857
+delete from orgnamecollate om where exists(select 1 from orgnamecollate0222del om2 where om.orgnamecollateid = om2.orgnamecollateid)--3857
+
+select * from orgnamecollate0222del
+
+select count(1) from orgcodecollate oc where exists(select 1 from orgnamecollatetemp ot where ot.dtid = oc.dtid and ot.orgname = oc.orgcode and ot.orgid = oc.orgid)--3853
+create table orgcodecollate0222del as select * from orgcodecollate oc where exists(select 1 from orgnamecollatetemp ot where ot.dtid = oc.dtid and ot.orgname = oc.orgcode and ot.orgid = oc.orgid)--3853
+-- 删除
+delete from orgcodecollate oc where exists (select 1 from orgcodecollate0222del oc2 where oc2.orgcodecollateid = oc.orgcodecollateid)
+
+select * from orgcodecollate0222del
+</code></pre>
+<h3 id="24通过客户代码-找到与之对应的-县区-地址-oraganization表">24.通过客户代码 找到与之对应的 县区、地址 （oraganization表）</h3>
+<p>organization 表，其中有经销商详细内容   字段</p>
+<pre><code> --通过客户代码orgcode 找到相对应 县区、详细地址
+ select o.orgcode as 客户代码 ,o.countyname as 县区 ,o.address as 地址 from organization o
+where o.orgcode in ('H904DK','K72614','H3497C')
+</code></pre>
+<h3 id="25插入打单目录数据-即流向归档">25.插入打单目录数据 （即流向归档）</h3>
+<pre><code>--select oz.regioncode from organization oz where oz.orgcode = 'H552RB' --需要插入打单目录的数据从机构表里取
+-- 107492511  K07832  佛慈大药房连锁(兰州)有限责任公司  620000
+--104917457   H457MF  甘肃陇中老百姓医药连锁有限公司  620000
+--105180063  H552RB  青海金珠药业连锁有限公司
+--630000
+
+-- regioncode 地区代码
+--先从organization获取到regioncode然后 插入 orgid orgcode orgname regioncode 四个字段内容
+
+--select * from orgdistributor o order by o.createdate desc
+ insert into orgdistributor(ORGDISTRIBUTORID,
+                      ORGID,
+                      ORGCODE,
+                      ORGNAME,
+                      REGIONCODE,
+                      PHONENUMBER,
+                      ELECTORNICUPLOAD,
+                      STATUS,
+                      COLLECTFRECUENCY,
+                      COLLECTDAYS,
+                      COLLECTTYPE,
+                      ADDDATE,
+                      PAUSEDATE,
+                      PAUSEREASON,
+                      CUSTOMERCODE,
+                      FEEDBACK,
+                      COMMENTS,
+                      CUSTOMERNAME,
+                      EMPLOYEENAME,
+                      CREATEDATE,
+                      DATELASTUPDATED,
+                      LASTMAKERUSERID,
+                      ORGCONTACT,
+                      ORGCONTACTPHONE,
+                      COLLECTDAYS2,
+                      INVENTORYUPLOAD,
+                      ORGRESPERSON,
+                      CMIRESPERSON,
+                      ORGADRESS,
+                      USERID,
+                      PHARMACEUTICAL,
+                      AREANAMEADD,
+                      AREAMANAGERADD) values(orgdistributorseq.nextval,
+              105180063,	-- orgid 
+              'H552RB',		-- orgcode
+              '青海金珠药业连锁有限公司',	--orgname
+              '630000',		--regioncode
+              '1',
+              0,
+              1,
+              1,
+              1.00000,
+              1,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              '1',
+              sysdate,
+              sysdate,
+              1,
+              null,
+              null,
+              4.00000,
+              0,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null);
+
+</code></pre>
+<h3 id="26月末打单维护月末操作最后一个工作日">26.月末打单维护（月末操作，最后一个工作日）</h3>
+<p>第一步 检查打单：</p>
+<pre><code>select * from gatherplandetail where yearmonth='201809' --yearmonth为新增打单日期--一般为下个月
+</code></pre>
+<p>第二步  更新打单表的cahorgcode</p>
+<pre><code>update gatherplandetail a set  a.cahorgcode=
+ (select o.orgcode from projectorg b,organization o where o.ovalorgcode=b.ovalorgcode and b.projectorgcode=a.dtcode and b.projectcode=a.projectcode and a.yearmonth='201809' and a.projectvalue=1 ) where a.yearmonth='201809' and a.projectvalue=1 and a.dtcode not in('700103')--yearmonth为新增打单日期
+</code></pre>
+<p>报错的话需查出问题，错误一般是三方表有问题，需一个个检查三方的明细，如三方检查无错误再检查其他表；三方表：projectorg 主数据表：organization</p>
+<p>第三步 第二步执行不报错再执行</p>
+<pre><code>update gatherplandetail a set a.cahorgcode=a.dtcode where a.cahorgcode is null
+</code></pre>
+<p>第四步 按照BPO所提需求拉取数据并提供给BPO</p>
+<pre><code>SELECT
+    distinct
+  a.orgcode            AS 公司代码,
+  a.orgname             AS 客户名称,    
+  u.employeename        AS 代表名称,    
+  d.employeename       AS CMI负责人
+  FROM organization a, 
+  usr   u,
+ /*tmp20150430 b,*/--dtcode所在的表，需新建
+ usr    d,
+ gatherplandetail g
+ WHERE 
+
+  a.employeecode=u.employeecode(+)
+
+ /* and a.orgcode=b.dtcode*/
+
+  and a.cmiresperson=d.employeecode(+)
+
+  /*and exists (select b.dtcode from tmp20150430 b)*/
+
+  and a.orgcode=g.cahorgcode
+
+  and g.yearmonth='201809' --yearmonth为新增打单日期
+</code></pre>
+<p>第五步 根据BPO提供EXcel数据，到数据库更新数据</p>
+<ol>
+<li>
+<p>清空临时表</p>
+<pre><code>truncate table tmp20150601 
+</code></pre>
+</li>
+<li>
+<p>将BPO提供的Excel表数据导入tmp20150601中，只需要公司代码(dtcode)、代表名称(name1)、CMI名称(name2)</p>
+<pre><code> select * from tmp20150601 for update 
+</code></pre>
+</li>
+<li>
+<p>更新临时表</p>
+<pre><code>update tmp20150601 a set employeecode=(select employeecode from usr b where a.name1=b.employeename and status=41)
+   where exists(select 1 from usr b where a.name1=b.employeename and status=41);
+
+   update tmp20150601 a set cmiresperson=(select employeecode from usr b where a.name2=b.employeename and status=41)
+   where exists(select 1 from usr b where a.name2=b.employeename and status=41);
+
+</code></pre>
+</li>
+<li>
+<p>检验查有没为空</p>
+<pre><code> select * from tmp20150601 where cmiresperson is null;
+
+ select * from tmp20150601 where employeecode is null;
+
+</code></pre>
+</li>
+<li>
+<p>更新到正式环境（第4检查不到数据时再执行）</p>
+<pre><code> update organization a set a.employeecode=(select b.employeecode from tmp20150601 b where a.orgcode=b.dtcode)where exists(select 1 from tmp20150601 b where a.orgcode=b.dtcode);
+
+   update organization a set a.cmiresperson=(select b.cmiresperson from tmp20150601 b where a.orgcode=b.dtcode)where exists(select 1 from tmp20150601 b where a.orgcode=b.dtcode); 
+
+</code></pre>
+</li>
+</ol>
+<h3 id="27统一门户新增账户后开通中文账户权限操作">27.统一门户新增账户后，开通中文账户权限操作</h3>
+<p>举例如下，usr 用户表，根据用户名 username 查找后，删除其 employeecode 中的值即可 即为空值</p>
+<pre><code>select * from usr u where u.username ='panxixi'for update
+</code></pre>
+<h3 id="28统一门户cmi负责人变更">28.统一门户CMI负责人变更</h3>
+<pre><code>-- 统一门户CMI商业负责人变更
+--select *  from gatherplandetail g where g.gatherplandetailid =100729042
+
+-- 先usr表中找到 employeename,employeecode 分别对应 gatherplandetail表中dataperson,datapersoncode
+--select u.employeecode from usr u  where u.employeename = '杨燕'and u.status = 41 --10C 466  523
+
+
+
+update gatherplandetail g
+   set g.dataperson = '杨燕', g.datapersoncode = '523'
+ where g.gatherplandetailid in (100729510,
+                                100729516,
+                                100729130,
+                                100729517)
+</code></pre>
+<h3 id="29ddi直连管理表-内容-附直连管理job-table等更改后要重启服务生效">29.DDI直连管理表 内容 （附：直连管理job table等更改后要重启服务生效）</h3>
+<p>常用表：</p>
+<pre><code>select * from usr  --注意：adminflag 是否管理员  menuflag:是否全部权限 默认cmi看到cmi的，ddi看到ddi的。
+select  *  from projecttask --项目管理表
+select  *  from directtask --直连安装沟通表
+select  *  from issuemanagetask --issue管理表
+</code></pre>
+<pre><code> select *  from directtask di where di.projecttaskid =1685 and di.orgcode='H2203J' 
+ select  *  from projecttask p where p.projectname like '%欧%' --1945 baier  1685 OMRON
+ select  *  from projecttask p where p.projectname like '%拜%' --1645
+ 
+  select *  from directtask di where di.status = 10 
+ select distinct di.status from directtask di
+ select * from dictionary di where di.type='StatusDirect'
+ 
+   select *  from directtask di where di.dtcode='BSC000001' --王轶宸
+</code></pre>
+<h3 id="30统一门户-客户对照-反写-问题-查看">30.统一门户 客户对照 反写 问题 查看</h3>
+<p>前端页面目录为：基础数据--对照清理--客户别名修改</p>
+<p>相对应表数据库中查看</p>
+<pre><code>--select * from orgcodecollate org where org.status=10 
+--update orgcodecollate org set org.status=80  where org.status=10 
+ -- 之前数据状态10改为80 不反写之前数据
+--select * from jobflowctrlseller --反写数据表     --delete from jobflowctrlseller
+--select * from batchupdateoriginallock for update --状态改为80 结束反写，60执行中  1反写 2 导总帐
+-- select * from orgcodecollate org where org.status=198  --- 行业库  状态198改为 80
+-- 正在执行的存储  会话 insert 结束
+</code></pre>
+<h3 id="31申诉核查数据-feedbacktrack表">31.申诉核查数据 feedbacktrack表</h3>
+<p>例如：上传数据错误，需要后台手动</p>
+<pre><code> select * from feedbacktrack fd order by fd.createdate desc for update
+</code></pre>
+<h3 id="32打单更改收集人上载人">32.打单更改收集人上载人</h3>
+<p>存储：update_gatherplandetailperson</p>
+<h3 id="33知识库更新">33.知识库更新</h3>
+<pre><code>create table ddirepositorydetail0430bak as select * from ddirepositorydetail --beifen
+select count(1) from ddirepositorydetail0430bak
+create table ddirepositorydetail0508bak as select * from ddirepositorydetail --beifen
+select count(1) from ddirepositorydetail0508bak --16000
+
+truncate  table ddirepositorydetail04
+select * from ddirepositorydetail04 for update -- delete from ddirepositorydetail04
+update ddirepositorydetail ddi set (
+
+  ddi.firstarrangentdate ,--首次安装完成时间
+
+  ddi.datelastupdated ,
+  ddi.erpbrand ,--ERP品牌
+  ddi.worktime ,--工作时间
+  ddi.hqdirect ,
+ ddi.ofdirectname ,--关联总公司名称
+    ddi.directlink ,--直连方式
+ ddi.dbdirectlink  ,--DB直连分类  
+ ddi.hiscomparisonmon ,--客户端版本
+  ddi.databasetype  ,--数据库类型
+  ddi.productstandard,--产品筛选标准 
+  ddi.nostandardproduct,--非标产品筛选条件 
+  ddi.vinventorytype,--V库存类型 
+
+  ddi.vinventoryupdate ,--V库存更新频率
+
+  ddi.invdate ,--V库存更新时间
+ddi.isinventorydate ,--是否提供库存时间字段
+    ddi.spdataupdate  ,--S\P数据更新频率
+  ddi.salesdate  ,--S\P数据更新时间
+ ddi.isspecialtype ,--是否存在特殊业务类型
+  ddi.specialtype , --特殊业务类型
+  ddi.clientgettime , --客户端抓取时间点
+  ddi.ftpfrequency ,--FTP传输时间
+  ddi.webserviceupdatetime,--WebService更新时间
+  ddi.directlinkexplain 
+)=(
+select  
+ firstarrangentdate,--首次安装完成时间
+  sysdate,
+  erpbrand,--ERP品牌
+  worktime,--工作时间
+  case 
+  hqdirect 
+  when '是' then 1
+  when '否' then 2  end ,--是否总分公司
+  
+  ofdirectname,--关联总公司名称
+  
+  case
+  directlink 
+  when  'FTP' then 1
+  when 'DB直连' then 2
+  when 'WebService' then 3 end ,--直连方式
+  
+  case
+  dbdirectlink 
+  when '专用视图'then 1
+  when '综合试图'then 2
+  when '表结构' then 3
+  when '文件夹' then 4 end ,--DB直连分类  
+
+  
+  hiscomparisonmon ,--客户端版本
+  
+  case
+  databasetype 
+  when 'SQLServer' then 1
+  when 'MySQL' then 2
+  when 'Oracle'then 3
+  when 'ODBC'then 4
+  when '其他' then 5 end ,--数据库类型
+  
+  case
+  productstandard 
+  when '标准产地' then 1
+  when '非标准产地' then 2 end ,--产品筛选标准 
+
+  case
+  nostandardproduct
+  when '产品集合' then 1
+  when  '流向卡号' then 2
+  when '产品代码' then 3
+  when '其他' then  4
+  end,--非标产品筛选条件 
+
+ case
+  vinventorytype 
+  when '实时库' then 1
+  when '中间库' then 2
+  when '历史'then 3
+  end ,--V库存类型 
+
+  case 
+  vinventoryupdate 
+  when '每天' then 1
+  when '其他' then 2
+  end ,--V库存更新频率
+  
+  invdate,--V库存更新时间
+  
+  case 
+  isinventorydate
+  when '是' then 1
+  when '否' then 2
+  end,--是否提供库存时间字段
+  
+  case
+  spdataupdate
+  when '每天' then 1
+  when '其他' then  2
+  end,--S\P数据更新频率
+  
+  salesdate,--S\P数据更新时间
+  
+  case
+  isspecialtype
+  when '是' then 1
+  when '否' then 2
+  end,--是否存在特殊业务类型
+  
+  specialtype, --特殊业务类型
+  clientgettime, --客户端抓取时间点
+  ftpfrequency,--FTP传输时间
+   webserviceupdatetime,--WebService更新时间
+   directlinkexplain --特例直连规则说明
+
+
+ from  ddirepositorydetail04 ddi04
+  where ddi04.ddirepositorydetailid=ddi.ddirepositorydetailid
+
+) where exists(select 1 from ddirepositorydetail04 d4 where d4.ddirepositorydetailid=ddi.ddirepositorydetailid)
+</code></pre>
+
+      </div>
+    </article>
+  
+    <article class="post">
+      <a href="https://honlya.github.io/post/gong-zuo-jiao-jie-wen-dang/">
+        <h2 class="post-title">工作交接文档</h2>
+      </a>
+      <div class="post-info">
+        <span>
+          2022-08-01
+        </span>
+        <span>
+          55 min read
+        </span>
+        
+      </div>
+      
+      <div class="post-abstract">
+        
+      </div>
+    </article>
+  
+    <article class="post">
+      <a href="https://honlya.github.io/post/web-qu-shu/">
+        <h2 class="post-title">WEB取数</h2>
+      </a>
+      <div class="post-info">
+        <span>
+          2022-07-28
+        </span>
+        <span>
+          1 min read
+        </span>
+        
+      </div>
+      
+      <div class="post-abstract">
+        
+      </div>
+    </article>
+  
+    <article class="post">
+      <a href="https://honlya.github.io/post/tong-yi-men-hu-wen-ti-chu-li/">
+        <h2 class="post-title">统一门户问题处理</h2>
+      </a>
+      <div class="post-info">
+        <span>
+          2022-07-28
+        </span>
+        <span>
+          9 min read
+        </span>
+        
+      </div>
+      
+        <a href="https://honlya.github.io/post/tong-yi-men-hu-wen-ti-chu-li/" class="post-feature-image" style="background-image: url('https://honlya.github.io/post-images/tong-yi-men-hu-wen-ti-chu-li.png')">
+        </a>
+      
+      <div class="post-abstract">
+        
+      </div>
+    </article>
+  
+    <article class="post">
+      <a href="https://honlya.github.io/post/hello-gridea/">
+        <h2 class="post-title">Hello Gridea</h2>
+      </a>
+      <div class="post-info">
+        <span>
+          2018-12-12
+        </span>
+        <span>
+          2 min read
+        </span>
+        
+          <a href="https://honlya.github.io/tag/Hw7qJF4EO/" class="post-tag">
+            # Gridea
+          </a>
+        
+      </div>
+      
+        <a href="https://honlya.github.io/post/hello-gridea/" class="post-feature-image" style="background-image: url('https://honlya.github.io/post-images/hello-gridea.png')">
+        </a>
+      
+      <div class="post-abstract">
+        <p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+
+      </div>
+    </article>
+  
+</div>
+
+    
+        <div class="pagination-container">
+  
+  
+</div>
+
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://honlya.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+  </body>
+</html>
